@@ -1,0 +1,43 @@
+name: invoice_generator
+description: A Flutter application for generating sales order invoices.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.5
+  pdf: ^3.10.4
+  printing: ^5.11.0
+  path_provider: ^2.0.15
+  provider: ^6.0.5
+  shared_preferences: ^2.1.1
+  image_picker: ^0.8.7+5
+  flutter_svg: ^2.0.6
+  uuid: ^3.0.7
+  share_plus: ^7.0.2
+  intl: ^0.20.2
+  file_picker: ^10.1.9
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/translations/
+  fonts:
+    - family: NotoSansArabic
+      fonts:
+        - asset: assets/fonts/NotoSansArabic-Regular.ttf
+        - asset: assets/fonts/NotoSansArabic-Bold.ttf
+          weight: 700
