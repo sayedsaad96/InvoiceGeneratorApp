@@ -5,7 +5,7 @@ import 'package:invoice_generator/utils/localization.dart';
 class ItemTable extends StatefulWidget {
   final List<InvoiceItem> items;
   final Function(List<InvoiceItem>) onItemsChanged;
-  
+
   const ItemTable({
     Key? key,
     required this.items,
@@ -18,13 +18,13 @@ class ItemTable extends StatefulWidget {
 
 class _ItemTableState extends State<ItemTable> {
   late List<InvoiceItem> _items;
-  
+
   @override
   void initState() {
     super.initState();
     _items = List.from(widget.items);
   }
-  
+
   @override
   void didUpdateWidget(ItemTable oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -32,7 +32,7 @@ class _ItemTableState extends State<ItemTable> {
       _items = List.from(widget.items);
     }
   }
-  
+
   void _addItem() {
     setState(() {
       _items.add(InvoiceItem(
@@ -44,21 +44,21 @@ class _ItemTableState extends State<ItemTable> {
       widget.onItemsChanged(_items);
     });
   }
-  
+
   void _removeItem(int index) {
     setState(() {
       _items.removeAt(index);
       widget.onItemsChanged(_items);
     });
   }
-  
+
   void _updateItem(int index, InvoiceItem item) {
     setState(() {
       _items[index] = item;
       widget.onItemsChanged(_items);
     });
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -134,11 +134,12 @@ class _ItemTableState extends State<ItemTable> {
           itemBuilder: (context, index) {
             final item = _items[index];
             final isEven = index % 2 == 0;
-            
+
             return Container(
               color: isEven ? const Color(0xFFE8F4EA) : Colors.white,
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 child: Row(
                   children: [
                     Expanded(
@@ -169,7 +170,8 @@ class _ItemTableState extends State<ItemTable> {
                         onChanged: (value) {
                           _updateItem(
                             index,
-                            item.copyWith(quantity: double.tryParse(value) ?? 0),
+                            item.copyWith(
+                                quantity: double.tryParse(value) ?? 0),
                           );
                         },
                       ),
@@ -202,7 +204,8 @@ class _ItemTableState extends State<ItemTable> {
                         onChanged: (value) {
                           _updateItem(
                             index,
-                            item.copyWith(unitPrice: double.tryParse(value) ?? 0),
+                            item.copyWith(
+                                unitPrice: double.tryParse(value) ?? 0),
                           );
                         },
                       ),

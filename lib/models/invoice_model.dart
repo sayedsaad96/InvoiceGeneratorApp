@@ -137,22 +137,22 @@ class Invoice {
   factory Invoice.sample() {
     return Invoice(
       date: DateTime.now(),
-      customer: Customer(name: 'المجموعة التجارية'),
-      salesRepresentative: 'سيد سعد',
-      region: 'العبور',
-      paymentMethod: 'كاش',
+      customer: Customer(name: ' '),
+      salesRepresentative: ' ',
+      region: '',
+      paymentMethod: ' ',
       deliveryIncluded: true,
-      deliveryLocation: 'السفير',
+      deliveryLocation: ' ',
       selectedBranches: {
         Invoice.branchSupplies,
         Invoice.branchCairo
       }, // Sample with multiple branches
       items: [
         InvoiceItem(
-          description: '150 gm',
+          description: ' 5000M',
           unit: 'cone',
-          quantity: 200,
-          unitPrice: 35,
+          quantity: 0,
+          unitPrice: 0,
         ),
       ],
     );

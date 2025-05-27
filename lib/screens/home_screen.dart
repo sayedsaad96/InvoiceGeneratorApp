@@ -69,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     _formKey.currentState?.reset();
   }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -126,11 +127,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(AppLocalizations.of(context)!.translate('preview')),
                   onPressed: _previewInvoice,
                 ),
-                //ElevatedButton.icon(
-                //icon: const Icon(Icons.picture_as_pdf),
-                //label: Text(AppLocalizations.of(context)!.translate('generate_pdf')),
-                // onPressed: _generatePdf,
-                //),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.picture_as_pdf),
+                  label: Text(AppLocalizations.of(context)!.translate('generate_pdf')),
+                  onPressed: _generatePdf,
+                ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.clear),
                   label: Text(AppLocalizations.of(context)!.translate('clear')),
