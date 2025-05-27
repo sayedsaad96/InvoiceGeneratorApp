@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -7,7 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:invoice_generator/models/invoice_model.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'dart:math' as math;
 
 class PdfService {
   // Generate PDF data
@@ -49,6 +48,7 @@ class PdfService {
                     ),
                     pw.Column(
                       children: [
+                        // Placeholder for logo if image loading fails or is not implemented
                         pw.Text(
                           'ANNEX GROUP',
                           style: const pw.TextStyle(
@@ -70,31 +70,52 @@ class PdfService {
                 ),
                 pw.SizedBox(height: 20),
 
-                // Branch selection
+                // Branch selection - Updated to show multiple selections
                 pw.Container(
-                  padding: const pw.EdgeInsets.all(10),
-                  decoration: pw.BoxDecoration(
-                    color: PdfColors.grey100,
-                    borderRadius: pw.BorderRadius.circular(5),
-                  ),
-                  child: pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildCheckbox(
-                          'عزل',
-                          invoice.branch == Invoice.branchInsulation,
-                          arabicFont),
-                      _buildCheckbox('مستلزمات',
-                          invoice.branch == Invoice.branchSupplies, arabicFont),
-                      _buildCheckbox('أقمشة',
-                          invoice.branch == Invoice.branchFabrics, arabicFont),
-                      _buildCheckbox('المحلة',
-                          invoice.branch == Invoice.branchMahalla, arabicFont),
-                      _buildCheckbox('القاهرة',
-                          invoice.branch == Invoice.branchCairo, arabicFont),
-                    ],
-                  ),
-                ),
+                    padding: const pw.EdgeInsets.all(10),
+                    decoration: pw.BoxDecoration(
+                      color: PdfColors.grey100,
+                      borderRadius: pw.BorderRadius.circular(5),
+                    ),
+                    child: pw.Column(children: [
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildCheckbox(
+                              'عزل',
+                              invoice.selectedBranches
+                                  .contains(Invoice.branchInsulation),
+                              arabicFont),
+                          _buildCheckbox(
+                              'مستلزمات',
+                              invoice.selectedBranches
+                                  .contains(Invoice.branchSupplies),
+                              arabicFont),
+                          _buildCheckbox(
+                              'أقمشة',
+                              invoice.selectedBranches
+                                  .contains(Invoice.branchFabrics),
+                              arabicFont),
+                        ],
+                      ),
+                      pw.SizedBox(height: 5),
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildCheckbox(
+                              'المحلة',
+                              invoice.selectedBranches
+                                  .contains(Invoice.branchMahalla),
+                              arabicFont),
+                          _buildCheckbox(
+                              'القاهرة',
+                              invoice.selectedBranches
+                                  .contains(Invoice.branchCairo),
+                              arabicFont),
+                          pw.Spacer(), // Keep alignment consistent
+                        ],
+                      ),
+                    ])),
                 pw.SizedBox(height: 20),
 
                 // Customer information
@@ -288,11 +309,12 @@ class PdfService {
   Future<void> openPdf(File file) async {
     final url = file.path;
     // This would typically use a platform-specific method to open the PDF
-    // For example, on mobile, you might use url_launcher
+    // For example, on mobile, you might use url_launcher or open_file
     // For simplicity, we'll just print the path here
     // ignore: avoid_print
-    await launchUrl(Uri.file(url));
-    
+    print('PDF generated at: $url');
+    // Consider adding a package like open_file to actually open the PDF
+    // await OpenFile.open(url);
   }
 
   // Share PDF file
@@ -308,25 +330,24 @@ class PdfService {
     return pw.Row(
       children: [
         pw.Container(
-          width: 12,
-          height: 12,
-          decoration: pw.BoxDecoration(
-            border: pw.Border.all(),
-            color: checked ? PdfColors.blueGrey : PdfColors.white,
-          ),
-          child: checked
-              ? pw.Center(
-                  child: pw.Text(
-                    '✓',
-                    style: const pw.TextStyle(
-                      color: PdfColors.white,
-                      fontSize: 8,
+            width: 12,
+            height: 12,
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(),
+              color: checked ? PdfColors.blueGrey : PdfColors.white,
+            ),
+            child: checked
+                ? pw.Center(
+                    child: pw.Text(
+                      '✓',
+                      style: const pw.TextStyle(
+                        color: PdfColors.white,
+                        fontSize: 10,
+                      ),
                     ),
-                  ),
-                )
-              : pw.Container(),
-        ),
-        pw.SizedBox(width: 5),
+                  )
+                : null),
+        pw.SizedBox(width: 5.0),
         pw.Text(
           label,
           style: pw.TextStyle(

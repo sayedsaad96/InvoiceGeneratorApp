@@ -10,7 +10,7 @@ class InvoiceForm extends StatefulWidget {
   final GlobalKey<FormState> formKey;
   final Invoice invoice;
   final Function(Invoice) onInvoiceChanged;
-  
+
   const InvoiceForm({
     Key? key,
     required this.formKey,
@@ -31,30 +31,36 @@ class _InvoiceFormState extends State<InvoiceForm> {
   late TextEditingController _deliveryLocationController;
   late DateTime _selectedDate;
   late DateTime? _selectedDeliveryDate;
-  late String _selectedBranch;
+  late Set<String> _selectedBranches; // Changed to Set<String>
   late bool _deliveryIncluded;
   late List<InvoiceItem> _items;
-  
+
   @override
   void initState() {
     super.initState();
     _initializeControllers();
   }
-  
+
   void _initializeControllers() {
-    _serialNumberController = TextEditingController(text: widget.invoice.serialNumber);
-    _customerNameController = TextEditingController(text: widget.invoice.customer.name);
-    _salesRepController = TextEditingController(text: widget.invoice.salesRepresentative);
+    _serialNumberController =
+        TextEditingController(text: widget.invoice.serialNumber);
+    _customerNameController =
+        TextEditingController(text: widget.invoice.customer.name);
+    _salesRepController =
+        TextEditingController(text: widget.invoice.salesRepresentative);
     _regionController = TextEditingController(text: widget.invoice.region);
-    _paymentMethodController = TextEditingController(text: widget.invoice.paymentMethod);
-    _deliveryLocationController = TextEditingController(text: widget.invoice.deliveryLocation);
+    _paymentMethodController =
+        TextEditingController(text: widget.invoice.paymentMethod);
+    _deliveryLocationController =
+        TextEditingController(text: widget.invoice.deliveryLocation);
     _selectedDate = widget.invoice.date;
     _selectedDeliveryDate = widget.invoice.deliveryDate;
-    _selectedBranch = widget.invoice.branch;
+    _selectedBranches =
+        Set.from(widget.invoice.selectedBranches); // Initialize Set
     _deliveryIncluded = widget.invoice.deliveryIncluded;
     _items = List.from(widget.invoice.items);
   }
-  
+
   @override
   void didUpdateWidget(InvoiceForm oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -62,7 +68,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
       _initializeControllers();
     }
   }
-  
+
   @override
   void dispose() {
     _serialNumberController.dispose();
@@ -73,7 +79,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
     _deliveryLocationController.dispose();
     super.dispose();
   }
-  
+
   void _updateInvoice() {
     final updatedInvoice = widget.invoice.copyWith(
       serialNumber: _serialNumberController.text,
@@ -88,20 +94,22 @@ class _InvoiceFormState extends State<InvoiceForm> {
       deliveryLocation: _deliveryLocationController.text,
       deliveryDate: _selectedDeliveryDate,
       items: _items,
-      branch: _selectedBranch,
+      selectedBranches: _selectedBranches, // Pass the Set
     );
-    
+
     widget.onInvoiceChanged(updatedInvoice);
   }
-  
+
   Future<void> _selectDate(BuildContext context, bool isDeliveryDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isDeliveryDate ? (_selectedDeliveryDate ?? DateTime.now()) : _selectedDate,
+      initialDate: isDeliveryDate
+          ? (_selectedDeliveryDate ?? DateTime.now())
+          : _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
-    
+
     if (picked != null) {
       setState(() {
         if (isDeliveryDate) {
@@ -113,7 +121,23 @@ class _InvoiceFormState extends State<InvoiceForm> {
       });
     }
   }
-  
+
+  void _handleBranchSelection(String branch, bool isSelected) {
+    setState(() {
+      if (isSelected) {
+        // If selecting a branch from Group 1, deselect other Group 1 branches
+        if (Invoice.group1Branches.contains(branch)) {
+          _selectedBranches
+              .removeWhere((b) => Invoice.group1Branches.contains(b));
+        }
+        _selectedBranches.add(branch);
+      } else {
+        _selectedBranches.remove(branch);
+      }
+      _updateInvoice();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -153,7 +177,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Serial Number
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -169,7 +193,8 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   controller: _serialNumberController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   ),
                   onChanged: (value) {
                     _updateInvoice();
@@ -179,80 +204,69 @@ class _InvoiceFormState extends State<InvoiceForm> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Branch selection
           Card(
             margin: EdgeInsets.zero,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     AppLocalizations.of(context)!.translate('branch'),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
+                  // Group 1 Branches (Insulation, Supplies, Fabrics)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       CustomCheckbox(
-                        label: AppLocalizations.of(context)!.translate('insulation'),
-                        value: _selectedBranch == Invoice.branchInsulation,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedBranch = Invoice.branchInsulation;
-                            _updateInvoice();
-                          });
-                        },
+                        label: AppLocalizations.of(context)!
+                            .translate('insulation'),
+                        value: _selectedBranches
+                            .contains(Invoice.branchInsulation),
+                        onChanged: (value) => _handleBranchSelection(
+                            Invoice.branchInsulation, value),
                       ),
                       CustomCheckbox(
-                        label: AppLocalizations.of(context)!.translate('supplies'),
-                        value: _selectedBranch == Invoice.branchSupplies,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedBranch = Invoice.branchSupplies;
-                            _updateInvoice();
-                          });
-                        },
+                        label:
+                            AppLocalizations.of(context)!.translate('supplies'),
+                        value:
+                            _selectedBranches.contains(Invoice.branchSupplies),
+                        onChanged: (value) => _handleBranchSelection(
+                            Invoice.branchSupplies, value),
                       ),
                       CustomCheckbox(
-                        label: AppLocalizations.of(context)!.translate('fabrics'),
-                        value: _selectedBranch == Invoice.branchFabrics,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedBranch = Invoice.branchFabrics;
-                            _updateInvoice();
-                          });
-                        },
+                        label:
+                            AppLocalizations.of(context)!.translate('fabrics'),
+                        value:
+                            _selectedBranches.contains(Invoice.branchFabrics),
+                        onChanged: (value) => _handleBranchSelection(
+                            Invoice.branchFabrics, value),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
+                  // Group 2 Branches (Mahalla, Cairo)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       CustomCheckbox(
-                        label: AppLocalizations.of(context)!.translate('mahalla'),
-                        value: _selectedBranch == Invoice.branchMahalla,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedBranch = Invoice.branchMahalla;
-                            _updateInvoice();
-                          });
-                        },
+                        label: AppLocalizations.of(context)!.translate('cairo'),
+                        value: _selectedBranches.contains(Invoice.branchCairo),
+                        onChanged: (value) =>
+                            _handleBranchSelection(Invoice.branchCairo, value),
                       ),
                       CustomCheckbox(
-                        label: AppLocalizations.of(context)!.translate('cairo'),
-                        value: _selectedBranch == Invoice.branchCairo,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedBranch = Invoice.branchCairo;
-                            _updateInvoice();
-                          });
-                        },
+                        label:
+                            AppLocalizations.of(context)!.translate('mahalla'),
+                        value:
+                            _selectedBranches.contains(Invoice.branchMahalla),
+                        onChanged: (value) => _handleBranchSelection(
+                            Invoice.branchMahalla, value),
                       ),
-                      const Spacer(),
                     ],
                   ),
                 ],
@@ -260,7 +274,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Invoice details
           Row(
             children: [
@@ -276,7 +290,8 @@ class _InvoiceFormState extends State<InvoiceForm> {
                     InkWell(
                       onTap: () => _selectDate(context, false),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 12),
                         decoration: BoxDecoration(
                           color: const Color(0xFFE8F4EA),
                           borderRadius: BorderRadius.circular(4),
@@ -285,7 +300,8 @@ class _InvoiceFormState extends State<InvoiceForm> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(DateFormat('dd-MMM-yyyy').format(_selectedDate)),
+                            Text(DateFormat('dd-MMM-yyyy')
+                                .format(_selectedDate)),
                             const Icon(Icons.calendar_today, size: 16),
                           ],
                         ),
@@ -313,7 +329,8 @@ class _InvoiceFormState extends State<InvoiceForm> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return AppLocalizations.of(context)!.translate('required_field');
+                          return AppLocalizations.of(context)!
+                              .translate('required_field');
                         }
                         return null;
                       },
@@ -327,7 +344,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           Row(
             children: [
               Expanded(
@@ -335,7 +352,8 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!.translate('sales_representative'),
+                      AppLocalizations.of(context)!
+                          .translate('sales_representative'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -348,7 +366,8 @@ class _InvoiceFormState extends State<InvoiceForm> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return AppLocalizations.of(context)!.translate('required_field');
+                          return AppLocalizations.of(context)!
+                              .translate('required_field');
                         }
                         return null;
                       },
@@ -386,7 +405,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           Row(
             children: [
               Expanded(
@@ -418,7 +437,8 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!.translate('delivery_included'),
+                      AppLocalizations.of(context)!
+                          .translate('delivery_included'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -453,7 +473,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           Row(
             children: [
               Expanded(
@@ -461,7 +481,8 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!.translate('delivery_location'),
+                      AppLocalizations.of(context)!
+                          .translate('delivery_location'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -492,7 +513,8 @@ class _InvoiceFormState extends State<InvoiceForm> {
                     InkWell(
                       onTap: () => _selectDate(context, true),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 12),
                         decoration: BoxDecoration(
                           color: const Color(0xFFE8F4EA),
                           borderRadius: BorderRadius.circular(4),
@@ -502,8 +524,10 @@ class _InvoiceFormState extends State<InvoiceForm> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(_selectedDeliveryDate != null
-                                ? DateFormat('dd-MMM-yyyy').format(_selectedDeliveryDate!)
-                                : AppLocalizations.of(context)!.translate('select_date')),
+                                ? DateFormat('dd-MMM-yyyy')
+                                    .format(_selectedDeliveryDate!)
+                                : AppLocalizations.of(context)!
+                                    .translate('select_date')),
                             const Icon(Icons.calendar_today, size: 16),
                           ],
                         ),
@@ -515,7 +539,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
             ],
           ),
           const SizedBox(height: 24),
-          
+
           // Items table
           Text(
             AppLocalizations.of(context)!.translate('order_items'),
@@ -532,7 +556,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
             },
           ),
           const SizedBox(height: 16),
-          
+
           // Summary
           Card(
             margin: EdgeInsets.zero,
@@ -548,8 +572,8 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   Text(
                     widget.invoice.total.toStringAsFixed(2),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ],
               ),
@@ -570,8 +594,8 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   Text(
                     widget.invoice.totalQuantity.toString(),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ],
               ),

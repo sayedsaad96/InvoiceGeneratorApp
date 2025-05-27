@@ -17,20 +17,20 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _formKey = GlobalKey<FormState>();
   late Invoice _invoice;
-  
+
   @override
   void initState() {
     super.initState();
     _invoice = Invoice.sample(); // Start with a sample invoice
   }
-  
+
   void _toggleLanguage() {
     final appLanguage = Provider.of<AppLanguage>(context, listen: false);
-    appLanguage.changeLanguage(
-      appLanguage.locale.languageCode == 'en' ? const Locale('ar') : const Locale('en')
-    );
+    appLanguage.changeLanguage(appLanguage.locale.languageCode == 'en'
+        ? const Locale('ar')
+        : const Locale('en'));
   }
-  
+
   void _previewInvoice() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -42,37 +42,39 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
   }
-  
+
   void _generatePdf() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      
+
       final pdfService = PdfService();
       final pdfFile = await pdfService.generateInvoicePdf(_invoice);
-      
+
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.translate('pdf_generated'))),
+        SnackBar(
+            content:
+                Text(AppLocalizations.of(context)!.translate('pdf_generated'))),
       );
-      
+
       // Open the PDF file
       await pdfService.openPdf(pdfFile);
     }
   }
-  
+
   void _clearForm() {
     setState(() {
       _invoice = Invoice.sample();
     });
     _formKey.currentState?.reset();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final appLanguage = Provider.of<AppLanguage>(context);
     final isRtl = appLanguage.locale.languageCode == 'ar';
-    
+
     return Directionality(
       textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
@@ -82,7 +84,8 @@ class _HomeScreenState extends State<HomeScreen> {
             IconButton(
               icon: const Icon(Icons.language),
               onPressed: _toggleLanguage,
-              tooltip: AppLocalizations.of(context)!.translate('change_language'),
+              tooltip:
+                  AppLocalizations.of(context)!.translate('change_language'),
             ),
             IconButton(
               icon: const Icon(Icons.settings),
@@ -112,20 +115,22 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         bottomNavigationBar: BottomAppBar(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton.icon(
                   icon: const Icon(Icons.preview),
-                  label: Text(AppLocalizations.of(context)!.translate('preview')),
+                  label:
+                      Text(AppLocalizations.of(context)!.translate('preview')),
                   onPressed: _previewInvoice,
                 ),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.picture_as_pdf),
-                  label: Text(AppLocalizations.of(context)!.translate('generate_pdf')),
-                  onPressed: _generatePdf,
-                ),
+                //ElevatedButton.icon(
+                //icon: const Icon(Icons.picture_as_pdf),
+                //label: Text(AppLocalizations.of(context)!.translate('generate_pdf')),
+                // onPressed: _generatePdf,
+                //),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.clear),
                   label: Text(AppLocalizations.of(context)!.translate('clear')),

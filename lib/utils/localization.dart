@@ -3,49 +3,50 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AppLanguage extends ChangeNotifier {
   Locale _locale = const Locale('ar');
-  
+
   Locale get locale => _locale;
-  
+
   AppLanguage() {
     _loadLanguage();
   }
-  
+
   Future<void> _loadLanguage() async {
     final prefs = await SharedPreferences.getInstance();
     final languageCode = prefs.getString('language_code');
-    
+
     if (languageCode != null) {
       _locale = Locale(languageCode);
       notifyListeners();
     }
   }
-  
+
   Future<void> changeLanguage(Locale locale) async {
     if (_locale == locale) return;
-    
+
     _locale = locale;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('language_code', locale.languageCode);
-    
+
     notifyListeners();
   }
 }
 
 class AppLocalizations {
   final Locale locale;
-  
+
   AppLocalizations(this.locale);
-  
+
   static AppLocalizations? of(BuildContext context) {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
-  
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
-  
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
   static final Map<String, Map<String, String>> _localizedValues = {
     'en': {
-      'app_title': 'Invoice Generator',
+      'app_title': 'Annex Group',
       'preview_invoice': 'Preview Invoice',
       'settings': 'Settings',
       'change_language': 'Change Language',
@@ -95,7 +96,7 @@ class AppLocalizations {
       'settings_saved': 'Settings saved successfully',
     },
     'ar': {
-      'app_title': 'منشئ الفواتير',
+      'app_title': 'شركة أنكس',
       'preview_invoice': 'معاينة الفاتورة',
       'settings': 'الإعدادات',
       'change_language': 'تغيير اللغة',
@@ -145,25 +146,26 @@ class AppLocalizations {
       'settings_saved': 'تم حفظ الإعدادات بنجاح',
     },
   };
-  
+
   String translate(String key) {
     return _localizedValues[locale.languageCode]?[key] ?? key;
   }
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
-  
+
   @override
   bool isSupported(Locale locale) {
     return ['en', 'ar'].contains(locale.languageCode);
   }
-  
+
   @override
   Future<AppLocalizations> load(Locale locale) async {
     return AppLocalizations(locale);
   }
-  
+
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }

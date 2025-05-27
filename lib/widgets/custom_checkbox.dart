@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class CustomCheckbox extends StatelessWidget {
   final String label;
   final bool value;
   final Function(bool) onChanged;
+  static const checkIcon = pw.IconData(0x2713);
   
   const CustomCheckbox({
     Key? key,

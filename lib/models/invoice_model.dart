@@ -13,21 +13,35 @@ class Invoice {
   final String deliveryLocation;
   final DateTime? deliveryDate;
   final List<InvoiceItem> items;
-  final String branch;
+  final Set<String> selectedBranches; // Changed from String to Set<String>
   final String serialNumber;
-  
+
   // Branch options
   static const String branchInsulation = 'insulation';
   static const String branchSupplies = 'supplies';
   static const String branchFabrics = 'fabrics';
   static const String branchMahalla = 'mahalla';
   static const String branchCairo = 'cairo';
-  
+
+  // Group 1 branches
+  static const Set<String> group1Branches = {
+    branchInsulation,
+    branchSupplies,
+    branchFabrics,
+  };
+
+  // Group 2 branches
+  static const Set<String> group2Branches = {
+    branchMahalla,
+    branchCairo,
+  };
+
   // Calculated properties
   double get subtotal => items.fold(0, (sum, item) => sum + item.total);
   double get total => subtotal; // Can add tax, discount, etc. if needed
-  int get totalQuantity => items.fold(0, (sum, item) => sum + item.quantity.toInt());
-  
+  int get totalQuantity =>
+      items.fold(0, (sum, item) => sum + item.quantity.toInt());
+
   Invoice({
     String? id,
     required this.date,
@@ -39,12 +53,12 @@ class Invoice {
     required this.deliveryLocation,
     this.deliveryDate,
     required this.items,
-    required this.branch,
+    required this.selectedBranches, // Updated parameter
     String? serialNumber,
-  }) : 
-    id = id ?? const Uuid().v4(),
-    serialNumber = serialNumber ?? DateTime.now().millisecondsSinceEpoch.toString().substring(0, 8);
-  
+  })  : id = id ?? const Uuid().v4(),
+        serialNumber = serialNumber ??
+            DateTime.now().millisecondsSinceEpoch.toString().substring(0, 8);
+
   // Create a copy of the invoice with updated fields
   Invoice copyWith({
     String? id,
@@ -57,7 +71,7 @@ class Invoice {
     String? deliveryLocation,
     DateTime? deliveryDate,
     List<InvoiceItem>? items,
-    String? branch,
+    Set<String>? selectedBranches, // Updated parameter
     String? serialNumber,
   }) {
     return Invoice(
@@ -71,11 +85,12 @@ class Invoice {
       deliveryLocation: deliveryLocation ?? this.deliveryLocation,
       deliveryDate: deliveryDate ?? this.deliveryDate,
       items: items ?? List.from(this.items),
-      branch: branch ?? this.branch,
+      selectedBranches: selectedBranches ??
+          Set.from(this.selectedBranches), // Updated parameter
       serialNumber: serialNumber ?? this.serialNumber,
     );
   }
-  
+
   // Convert invoice to JSON
   Map<String, dynamic> toJson() {
     return {
@@ -89,11 +104,12 @@ class Invoice {
       'deliveryLocation': deliveryLocation,
       'deliveryDate': deliveryDate?.toIso8601String(),
       'items': items.map((item) => item.toJson()).toList(),
-      'branch': branch,
+      'selectedBranches':
+          selectedBranches.toList(), // Convert Set to List for JSON
       'serialNumber': serialNumber,
     };
   }
-  
+
   // Create invoice from JSON
   factory Invoice.fromJson(Map<String, dynamic> json) {
     return Invoice(
@@ -105,13 +121,18 @@ class Invoice {
       paymentMethod: json['paymentMethod'],
       deliveryIncluded: json['deliveryIncluded'],
       deliveryLocation: json['deliveryLocation'],
-      deliveryDate: json['deliveryDate'] != null ? DateTime.parse(json['deliveryDate']) : null,
-      items: (json['items'] as List).map((item) => InvoiceItem.fromJson(item)).toList(),
-      branch: json['branch'],
+      deliveryDate: json['deliveryDate'] != null
+          ? DateTime.parse(json['deliveryDate'])
+          : null,
+      items: (json['items'] as List)
+          .map((item) => InvoiceItem.fromJson(item))
+          .toList(),
+      selectedBranches: Set<String>.from(
+          json['selectedBranches']), // Convert List back to Set
       serialNumber: json['serialNumber'],
     );
   }
-  
+
   // Create a sample invoice for testing
   factory Invoice.sample() {
     return Invoice(
@@ -122,7 +143,10 @@ class Invoice {
       paymentMethod: 'كاش',
       deliveryIncluded: true,
       deliveryLocation: 'السفير',
-      branch: Invoice.branchSupplies,
+      selectedBranches: {
+        Invoice.branchSupplies,
+        Invoice.branchCairo
+      }, // Sample with multiple branches
       items: [
         InvoiceItem(
           description: '150 gm',
