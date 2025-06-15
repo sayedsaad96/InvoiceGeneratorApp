@@ -25,15 +25,37 @@ class InvoiceForm extends StatefulWidget {
 class _InvoiceFormState extends State<InvoiceForm> {
   late TextEditingController _serialNumberController;
   late TextEditingController _customerNameController;
-  late TextEditingController _salesRepController;
+  late TextEditingController
+      _salesRepController; // Changed back to TextEditingController
   late TextEditingController _regionController;
-  late TextEditingController _paymentMethodController;
+  late TextEditingController
+      _paymentMethodController; // Changed back to TextEditingController
   late TextEditingController _deliveryLocationController;
   late DateTime _selectedDate;
   late DateTime? _selectedDeliveryDate;
-  late Set<String> _selectedBranches; // Changed to Set<String>
+  late Set<String> _selectedBranches;
   late bool _deliveryIncluded;
   late List<InvoiceItem> _items;
+  // Removed _selectedSalesRep and _selectedPaymentMethod state variables
+
+  // Dropdown options for Autocomplete
+  final List<String> salesRepOptions = [
+    'سيد سعد',
+    'محمد ايمن',
+    'عبد العزيز مدحت',
+    'محمد الحديدي',
+    'احمد عادل',
+    'احمد زهران',
+    'محمد جمال',
+    'قمر ذكي',
+  ];
+  final List<String> paymentMethodOptions = [
+    'كاش',
+    'اجل اسبوعين',
+    'اجل شهر',
+    'اجل شهرين',
+    'اجل 3 شهور'
+  ];
 
   @override
   void initState() {
@@ -55,16 +77,22 @@ class _InvoiceFormState extends State<InvoiceForm> {
         TextEditingController(text: widget.invoice.deliveryLocation);
     _selectedDate = widget.invoice.date;
     _selectedDeliveryDate = widget.invoice.deliveryDate;
-    _selectedBranches =
-        Set.from(widget.invoice.selectedBranches); // Initialize Set
+    _selectedBranches = Set.from(widget.invoice.selectedBranches);
     _deliveryIncluded = widget.invoice.deliveryIncluded;
     _items = List.from(widget.invoice.items);
+
+    // Add listeners to update invoice on text change
+    _salesRepController.addListener(_updateInvoiceFromText);
+    _paymentMethodController.addListener(_updateInvoiceFromText);
   }
 
   @override
   void didUpdateWidget(InvoiceForm oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.invoice != widget.invoice) {
+      // Remove old listeners before re-initializing
+      _salesRepController.removeListener(_updateInvoiceFromText);
+      _paymentMethodController.removeListener(_updateInvoiceFromText);
       _initializeControllers();
     }
   }
@@ -73,11 +101,18 @@ class _InvoiceFormState extends State<InvoiceForm> {
   void dispose() {
     _serialNumberController.dispose();
     _customerNameController.dispose();
+    _salesRepController.removeListener(_updateInvoiceFromText);
     _salesRepController.dispose();
     _regionController.dispose();
+    _paymentMethodController.removeListener(_updateInvoiceFromText);
     _paymentMethodController.dispose();
     _deliveryLocationController.dispose();
     super.dispose();
+  }
+
+  // Separate update function for text controllers to avoid infinite loops
+  void _updateInvoiceFromText() {
+    _updateInvoice();
   }
 
   void _updateInvoice() {
@@ -87,17 +122,22 @@ class _InvoiceFormState extends State<InvoiceForm> {
       customer: widget.invoice.customer.copyWith(
         name: _customerNameController.text,
       ),
-      salesRepresentative: _salesRepController.text,
+      salesRepresentative:
+          _salesRepController.text, // Use text controller value
       region: _regionController.text,
-      paymentMethod: _paymentMethodController.text,
+      paymentMethod: _paymentMethodController.text, // Use text controller value
       deliveryIncluded: _deliveryIncluded,
       deliveryLocation: _deliveryLocationController.text,
       deliveryDate: _selectedDeliveryDate,
       items: _items,
-      selectedBranches: _selectedBranches, // Pass the Set
+      selectedBranches: _selectedBranches,
     );
-
-    widget.onInvoiceChanged(updatedInvoice);
+    // Use a post frame callback to avoid calling setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        widget.onInvoiceChanged(updatedInvoice);
+      }
+    });
   }
 
   Future<void> _selectDate(BuildContext context, bool isDeliveryDate) async {
@@ -125,7 +165,6 @@ class _InvoiceFormState extends State<InvoiceForm> {
   void _handleBranchSelection(String branch, bool isSelected) {
     setState(() {
       if (isSelected) {
-        // If selecting a branch from Group 1, deselect other Group 1 branches
         if (Invoice.group1Branches.contains(branch)) {
           _selectedBranches
               .removeWhere((b) => Invoice.group1Branches.contains(b));
@@ -140,6 +179,8 @@ class _InvoiceFormState extends State<InvoiceForm> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Form(
       key: widget.formKey,
       child: Column(
@@ -170,7 +211,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  AppLocalizations.of(context)!.translate('sales_order'),
+                  localizations.translate('sales_order'),
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ],
@@ -183,7 +224,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Text(
-                AppLocalizations.of(context)!.translate('serial_number'),
+                localizations.translate('serial_number'),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(width: 8),
@@ -211,36 +252,32 @@ class _InvoiceFormState extends State<InvoiceForm> {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    AppLocalizations.of(context)!.translate('branch'),
+                    localizations.translate('branch'),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
-                  // Group 1 Branches (Insulation, Supplies, Fabrics)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       CustomCheckbox(
-                        label: AppLocalizations.of(context)!
-                            .translate('insulation'),
+                        label: localizations.translate('insulation'),
                         value: _selectedBranches
                             .contains(Invoice.branchInsulation),
                         onChanged: (value) => _handleBranchSelection(
                             Invoice.branchInsulation, value),
                       ),
                       CustomCheckbox(
-                        label:
-                            AppLocalizations.of(context)!.translate('supplies'),
+                        label: localizations.translate('supplies'),
                         value:
                             _selectedBranches.contains(Invoice.branchSupplies),
                         onChanged: (value) => _handleBranchSelection(
                             Invoice.branchSupplies, value),
                       ),
                       CustomCheckbox(
-                        label:
-                            AppLocalizations.of(context)!.translate('fabrics'),
+                        label: localizations.translate('fabrics'),
                         value:
                             _selectedBranches.contains(Invoice.branchFabrics),
                         onChanged: (value) => _handleBranchSelection(
@@ -249,24 +286,23 @@ class _InvoiceFormState extends State<InvoiceForm> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // Group 2 Branches (Mahalla, Cairo)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       CustomCheckbox(
-                        label: AppLocalizations.of(context)!.translate('cairo'),
-                        value: _selectedBranches.contains(Invoice.branchCairo),
-                        onChanged: (value) =>
-                            _handleBranchSelection(Invoice.branchCairo, value),
-                      ),
-                      CustomCheckbox(
-                        label:
-                            AppLocalizations.of(context)!.translate('mahalla'),
+                        label: localizations.translate('mahalla'),
                         value:
                             _selectedBranches.contains(Invoice.branchMahalla),
                         onChanged: (value) => _handleBranchSelection(
                             Invoice.branchMahalla, value),
                       ),
+                      CustomCheckbox(
+                        label: localizations.translate('cairo'),
+                        value: _selectedBranches.contains(Invoice.branchCairo),
+                        onChanged: (value) =>
+                            _handleBranchSelection(Invoice.branchCairo, value),
+                      ),
+                      const Spacer(),
                     ],
                   ),
                 ],
@@ -283,7 +319,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!.translate('date'),
+                      localizations.translate('date'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -316,7 +352,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!.translate('customer_name'),
+                      localizations.translate('customer_name'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -329,8 +365,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return AppLocalizations.of(context)!
-                              .translate('required_field');
+                          return localizations.translate('required_field');
                         }
                         return null;
                       },
@@ -352,27 +387,86 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!
-                          .translate('sales_representative'),
+                      localizations.translate('sales_representative'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _salesRepController,
-                      decoration: const InputDecoration(
-                        filled: true,
-                        fillColor: Color(0xFFE8F4EA),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return AppLocalizations.of(context)!
-                              .translate('required_field');
+                    // Autocomplete for Sales Representative
+                    Autocomplete<String>(
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text == '') {
+                          return const Iterable<String>.empty();
                         }
-                        return null;
+                        return salesRepOptions.where((String option) {
+                          // Simple contains check, could be improved for Arabic matching
+                          return option.contains(textEditingValue.text);
+                        });
                       },
-                      onChanged: (value) {
+                      onSelected: (String selection) {
+                        _salesRepController.text = selection;
                         _updateInvoice();
+                      },
+                      fieldViewBuilder: (BuildContext context,
+                          TextEditingController fieldTextEditingController,
+                          FocusNode fieldFocusNode,
+                          VoidCallback onFieldSubmitted) {
+                        // Assign the controller from the state
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (fieldTextEditingController.text !=
+                              _salesRepController.text) {
+                            fieldTextEditingController.text =
+                                _salesRepController.text;
+                          }
+                        });
+                        return TextFormField(
+                          controller:
+                              _salesRepController, // Use the state controller
+                          focusNode: fieldFocusNode,
+                          style: const TextStyle(fontFamily: 'NotoSansArabic'),
+                          decoration: const InputDecoration(
+                            filled: true,
+                            fillColor: Color(0xFFE8F4EA),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return localizations.translate('required_field');
+                            }
+                            return null;
+                          },
+                        );
+                      },
+                      optionsViewBuilder: (BuildContext context,
+                          AutocompleteOnSelected<String> onSelected,
+                          Iterable<String> options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4.0,
+                            child: SizedBox(
+                              height: 200.0,
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                itemCount: options.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  final String option =
+                                      options.elementAt(index);
+                                  return InkWell(
+                                    onTap: () {
+                                      onSelected(option);
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Text(option,
+                                          style: const TextStyle(
+                                              fontFamily: 'NotoSansArabic')),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
                       },
                     ),
                   ],
@@ -384,7 +478,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!.translate('region'),
+                      localizations.translate('region'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -413,19 +507,84 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!.translate('payment_method'),
+                      localizations.translate('payment_method'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _paymentMethodController,
-                      decoration: const InputDecoration(
-                        filled: true,
-                        fillColor: Color(0xFFE8F4EA),
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (value) {
+                    // Autocomplete for Payment Method
+                    Autocomplete<String>(
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text == '') {
+                          return const Iterable<String>.empty();
+                        }
+                        return paymentMethodOptions.where((String option) {
+                          return option.contains(textEditingValue.text);
+                        });
+                      },
+                      onSelected: (String selection) {
+                        _paymentMethodController.text = selection;
                         _updateInvoice();
+                      },
+                      fieldViewBuilder: (BuildContext context,
+                          TextEditingController fieldTextEditingController,
+                          FocusNode fieldFocusNode,
+                          VoidCallback onFieldSubmitted) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (fieldTextEditingController.text !=
+                              _paymentMethodController.text) {
+                            fieldTextEditingController.text =
+                                _paymentMethodController.text;
+                          }
+                        });
+                        return TextFormField(
+                          controller:
+                              _paymentMethodController, // Use the state controller
+                          focusNode: fieldFocusNode,
+                          style: const TextStyle(fontFamily: 'NotoSansArabic'),
+                          decoration: const InputDecoration(
+                            filled: true,
+                            fillColor: Color(0xFFE8F4EA),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return localizations.translate('required_field');
+                            }
+                            return null;
+                          },
+                        );
+                      },
+                      optionsViewBuilder: (BuildContext context,
+                          AutocompleteOnSelected<String> onSelected,
+                          Iterable<String> options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4.0,
+                            child: SizedBox(
+                              height: 200.0, // Adjust height as needed
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                itemCount: options.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  final String option =
+                                      options.elementAt(index);
+                                  return InkWell(
+                                    onTap: () {
+                                      onSelected(option);
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Text(option,
+                                          style: const TextStyle(
+                                              fontFamily: 'NotoSansArabic')),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
                       },
                     ),
                   ],
@@ -437,15 +596,14 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!
-                          .translate('delivery_included'),
+                      localizations.translate('delivery_included'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         CustomCheckbox(
-                          label: AppLocalizations.of(context)!.translate('yes'),
+                          label: localizations.translate('yes'),
                           value: _deliveryIncluded,
                           onChanged: (value) {
                             setState(() {
@@ -456,7 +614,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
                         ),
                         const SizedBox(width: 16),
                         CustomCheckbox(
-                          label: AppLocalizations.of(context)!.translate('no'),
+                          label: localizations.translate('no'),
                           value: !_deliveryIncluded,
                           onChanged: (value) {
                             setState(() {
@@ -481,8 +639,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!
-                          .translate('delivery_location'),
+                      localizations.translate('delivery_location'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -506,7 +663,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!.translate('delivery_date'),
+                      localizations.translate('delivery_date'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -526,8 +683,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
                             Text(_selectedDeliveryDate != null
                                 ? DateFormat('dd-MMM-yyyy')
                                     .format(_selectedDeliveryDate!)
-                                : AppLocalizations.of(context)!
-                                    .translate('select_date')),
+                                : localizations.translate('select_date')),
                             const Icon(Icons.calendar_today, size: 16),
                           ],
                         ),
@@ -542,7 +698,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
 
           // Items table
           Text(
-            AppLocalizations.of(context)!.translate('order_items'),
+            localizations.translate('order_items'),
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
@@ -566,7 +722,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    AppLocalizations.of(context)!.translate('total'),
+                    localizations.translate('total'),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   Text(
@@ -588,7 +744,7 @@ class _InvoiceFormState extends State<InvoiceForm> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    AppLocalizations.of(context)!.translate('total_quantity'),
+                    localizations.translate('total_quantity'),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   Text(
